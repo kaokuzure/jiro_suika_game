@@ -231,9 +231,7 @@ export class SuikaGame {
     this.engine.gravity.x = 0;
     this.windTimer = this.randomWindInterval();
     this.callbacks.onWindChange?.(false, 0);
-    // 出現範囲が変わるので、狙い中とNEXTの両方を引き直す
-    this.upcomingStageIndex = null;
-    this.pickNextStage();
+    // 狙い中・NEXTのジローは引き継ぐ(切替で引き直すと意図的な変更ができてしまうため)
   }
 
   private updateWind(dt: number) {
