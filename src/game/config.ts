@@ -99,7 +99,7 @@ export const MODE_SETTINGS: Record<
   aggressive: {
     gravityY: 1.55,
     restitution: 0.48,
-    maxSpawnStage: 6,
+    maxSpawnStage: 4,
     dropCooldownMs: 230,
     maxSpeed: 34,
   },

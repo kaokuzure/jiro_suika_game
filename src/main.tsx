@@ -16,8 +16,10 @@ function App() {
   const [mode, setMode] = useState<GameMode>('normal');
   const [wind, setWind] = useState({ active: false, direction: 0 });
   const [bgmOn, setBgmOn] = useState(true);
+  const [showMergeGuide, setShowMergeGuide] = useState(false);
   const bgmRef = useRef<HTMLAudioElement | null>(null);
   const bgmOnRef = useRef(true);
+  const bgmStartedRef = useRef(false);
 
   useEffect(() => {
     const audio = new Audio('/assets/bgm.mp3');
@@ -25,19 +27,34 @@ function App() {
     audio.volume = 0.4;
     bgmRef.current = audio;
 
-    // ブラウザの自動再生制限対策: 再生できなければ最初のユーザー操作時に開始する
-    audio.play().catch(() => {
-      const startOnGesture = () => {
-        if (bgmOnRef.current) {
-          audio.play().catch(() => {});
-        }
-      };
-      window.addEventListener('pointerdown', startOnGesture, { once: true });
+    // デスクトップなど自動再生が許可されている環境では即座に再生を試みる。
+    // スマホなど自動再生がブロックされた環境では、
+    // 最初のジロー投下時(ユーザー操作)に startBgm() から再生する。
+    audio.play().then(() => {
+      bgmStartedRef.current = true;
+    }).catch(() => {
+      // 自動再生ブロック済み。投下時の開始に委ねる。
     });
+
+    if (import.meta.env.DEV) {
+      (window as any).__bgm = audio;
+    }
 
     return () => {
       audio.pause();
     };
+  }, []);
+
+  /** BGMを再生する(まだ開始していない場合のみ)。ユーザー操作内で呼ぶ必要がある */
+  const startBgm = useCallback(() => {
+    const audio = bgmRef.current;
+    if (!audio || bgmStartedRef.current || !bgmOnRef.current) return;
+    audio.play().then(() => {
+      bgmStartedRef.current = true;
+    }).catch(() => {
+      // それでも再生できない場合は次の操作で再試行
+      bgmStartedRef.current = false;
+    });
   }, []);
 
   const toggleBgm = () => {
@@ -47,7 +64,9 @@ function App() {
       const next = !prev;
       bgmOnRef.current = next;
       if (next) {
-        audio.play().catch(() => {});
+        audio.play().then(() => {
+          bgmStartedRef.current = true;
+        }).catch(() => {});
       } else {
         audio.pause();
       }
@@ -106,8 +125,10 @@ function App() {
   );
 
   const handleDrop = useCallback(() => {
+    // 最初のジロー投下をユーザー操作としてBGM再生を開始する(モバイルの自動再生制限対策)
+    startBgm();
     gameRef.current?.drop();
-  }, []);
+  }, [startBgm]);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     handleMove(e.clientX);
@@ -132,13 +153,21 @@ function App() {
     setWind({ active: false, direction: 0 });
   };
 
+  // アグレッシブモードでは背景を少し濃くする
+  useEffect(() => {
+    document.body.classList.toggle('bg-aggressive', mode === 'aggressive');
+    return () => {
+      document.body.classList.remove('bg-aggressive');
+    };
+  }, [mode]);
+
   const nextStageConfig = STAGES[nextStage];
 
   return (
     <main className="app-shell">
       <section className="panel">
         <header className="header">
-          <h1>ジローのスイカ</h1>
+          <h1>角刈りスイカ</h1>
           <button
             type="button"
             className={`bgm-toggle${bgmOn ? ' is-on' : ''}`}
@@ -232,6 +261,57 @@ function App() {
         <p className="hint">
           マウス移動 / スワイプで位置を決め、クリック・タップで落とそう。同じジローを合体させて最終段階を目指せ！
         </p>
+
+        <button
+          type="button"
+          className="merge-guide-button"
+          onClick={() => setShowMergeGuide(true)}
+        >
+          合成について
+        </button>
+
+        {showMergeGuide && (
+          <div
+            className="merge-guide-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label="合成について"
+            onClick={() => setShowMergeGuide(false)}
+          >
+            <div className="merge-guide" onClick={(e) => e.stopPropagation()}>
+              <h2>合成のしくみ</h2>
+              <p className="merge-guide-lead">
+                同じジローを2つ合わせると、1段階大きいジローに合成されるよ。
+                最終段階の「スイカ」を目指そう！
+              </p>
+              <div className="merge-guide-flow">
+                {STAGES.map((stage, i) => (
+                  <React.Fragment key={stage.index}>
+                    <div className="merge-guide-stage" title={`段階 ${stage.index + 1}`}>
+                      <img
+                        src={stage.image}
+                        alt={`段階${stage.index + 1}`}
+                        style={{ width: 20 + stage.index * 3, height: 20 + stage.index * 3 }}
+                      />
+                      <span className="merge-guide-stage-label">{stage.index + 1}</span>
+                    </div>
+                    {i < STAGES.length - 1 && <span className="merge-guide-arrow">→</span>}
+                  </React.Fragment>
+                ))}
+              </div>
+              <p className="merge-guide-note">
+                段階が上がるほど大きく・重くなる。大きいジローは合成で作ろう！
+              </p>
+              <button
+                type="button"
+                className="merge-guide-close"
+                onClick={() => setShowMergeGuide(false)}
+              >
+                とじる
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

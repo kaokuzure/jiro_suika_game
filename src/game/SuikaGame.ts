@@ -118,6 +118,7 @@ export class SuikaGame {
   private images: (HTMLImageElement | null)[] = [];
   private imageTrims: (ImageTrim | null)[] = [];
   private backgroundImage: HTMLImageElement | null = null;
+  private aggressiveBackgroundImage: HTMLImageElement | null = null;
   private particles: Particle[] = [];
   private audioCtx: AudioContext | null = null;
   private mergeBuffer: AudioBuffer | null = null;
@@ -170,6 +171,7 @@ export class SuikaGame {
     this.images = await Promise.all(STAGES.map((s) => loadImage(s.image)));
     this.imageTrims = this.images.map((img) => (img ? computeTrim(img) : null));
     this.backgroundImage = await loadImage('/assets/jar-background.png');
+    this.aggressiveBackgroundImage = await loadImage('/assets/jar-background-aggressive.png');
     await this.loadMergeSound();
     this.windTimer = this.randomWindInterval();
     this.pickNextStage();
@@ -662,19 +664,20 @@ export class SuikaGame {
     // background
     ctx.fillStyle = '#fff7ed';
     ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-    if (this.backgroundImage) {
+    const backgroundImage = this.mode === 'aggressive' ? this.aggressiveBackgroundImage : this.backgroundImage;
+    if (backgroundImage) {
       const availableWidth = LOGICAL_WIDTH - WALL_THICKNESS * 4;
       const availableHeight = LOGICAL_HEIGHT - WALL_THICKNESS * 2;
       const scale = Math.min(
-        availableWidth / this.backgroundImage.width,
-        availableHeight / this.backgroundImage.height,
+        availableWidth / backgroundImage.width,
+        availableHeight / backgroundImage.height,
       );
-      const width = this.backgroundImage.width * scale;
-      const height = this.backgroundImage.height * scale;
+      const width = backgroundImage.width * scale;
+      const height = backgroundImage.height * scale;
       ctx.save();
       ctx.globalAlpha = 0.2;
       ctx.drawImage(
-        this.backgroundImage,
+        backgroundImage,
         (LOGICAL_WIDTH - width) / 2,
         (LOGICAL_HEIGHT - height) / 2,
         width,
