@@ -128,7 +128,10 @@ export class SuikaGame {
   private shakeMagnitude = 0;
 
   private pointerX = LOGICAL_WIDTH / 2;
+  /** 現在狙っている(次に落とす)ジロー */
   private nextStageIndex = 0;
+  /** その次に来るジロー(NEXT表示用) */
+  private upcomingStageIndex: number | null = null;
   private dropCooldownUntil = 0;
   private running = false;
   private gameOver = false;
@@ -224,6 +227,8 @@ export class SuikaGame {
     this.engine.gravity.x = 0;
     this.windTimer = this.randomWindInterval();
     this.callbacks.onWindChange?.(false, 0);
+    // 出現範囲が変わるので、狙い中とNEXTの両方を引き直す
+    this.upcomingStageIndex = null;
     this.pickNextStage();
   }
 
@@ -450,14 +455,19 @@ export class SuikaGame {
   }
 
   private pickNextStage() {
-    const maximum = MODE_SETTINGS[this.mode].maxSpawnStage;
-    this.nextStageIndex = Math.floor(Math.random() * (maximum + 1));
+    const roll = () => {
+      const maximum = MODE_SETTINGS[this.mode].maxSpawnStage;
+      return Math.floor(Math.random() * (maximum + 1));
+    };
+    // 「次の次」を繰り上げて新しい狙いにし、次の「次の次」を補充する
+    this.nextStageIndex = this.upcomingStageIndex ?? roll();
+    this.upcomingStageIndex = roll();
     const radius = STAGES[this.nextStageIndex].radius;
     this.pointerX = Math.max(
       WALL_THICKNESS + radius,
       Math.min(LOGICAL_WIDTH - WALL_THICKNESS - radius, this.pointerX),
     );
-    this.callbacks.onNextStageChange?.(this.nextStageIndex);
+    this.callbacks.onNextStageChange?.(this.upcomingStageIndex);
   }
 
   setPointerX(logicalX: number) {
@@ -472,7 +482,8 @@ export class SuikaGame {
   }
 
   getNextStageIndex() {
-    return this.nextStageIndex;
+    // NEXT表示は「次に来るジロー」を返す(狙い中のジローではない)
+    return this.upcomingStageIndex ?? this.nextStageIndex;
   }
 
   // ---- 開発・検証用ヘルパー(本編のロジックには影響しない) ----
