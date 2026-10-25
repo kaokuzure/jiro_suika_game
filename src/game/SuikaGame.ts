@@ -752,7 +752,7 @@ export class SuikaGame {
     ctx.stroke();
     ctx.restore();
 
-    this.drawJiro(this.pointerX, y, stage.radius, stage.index, 1, 0.9);
+    this.drawJiro(this.pointerX, y, stage.radius, stage.index, 0, 0.9);
   }
 
   private drawFruit(body: FruitBody) {
