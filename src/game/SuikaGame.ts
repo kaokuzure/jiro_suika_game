@@ -133,6 +133,8 @@ export class SuikaGame {
   private nextStageIndex = 0;
   /** その次に来るジロー(NEXT表示用) */
   private upcomingStageIndex: number | null = null;
+  /** 狙い中ジローの初期角度。アグレッシブモードではランダムに傾く */
+  private spawnAngle = 0;
   private dropCooldownUntil = 0;
   private running = false;
   private gameOver = false;
@@ -464,6 +466,8 @@ export class SuikaGame {
     // 「次の次」を繰り上げて新しい狙いにし、次の「次の次」を補充する
     this.nextStageIndex = this.upcomingStageIndex ?? roll();
     this.upcomingStageIndex = roll();
+    // アグレッシブモードでは狙い中のジローがランダムに傾く(±0.45ラジアン程度)
+    this.spawnAngle = this.mode === 'aggressive' ? (Math.random() - 0.5) * 0.9 : 0;
     const radius = STAGES[this.nextStageIndex].radius;
     this.pointerX = Math.max(
       WALL_THICKNESS + radius,
@@ -518,6 +522,8 @@ export class SuikaGame {
     const stage = STAGES[stageIndex];
     const spawnY = DANGER_LINE_Y - stage.radius - 4;
     const body = this.createFruitBody(stageIndex, this.pointerX, Math.max(stage.radius + 2, spawnY));
+    // アグレッシブモードでは狙い中に表示されていた傾きのまま落とす
+    Matter.Body.setAngle(body, this.spawnAngle);
     Matter.World.add(this.world, body);
     this.dropCooldownUntil = performance.now() + MODE_SETTINGS[this.mode].dropCooldownMs;
     this.pickNextStage();
@@ -752,7 +758,7 @@ export class SuikaGame {
     ctx.stroke();
     ctx.restore();
 
-    this.drawJiro(this.pointerX, y, stage.radius, stage.index, 0, 0.9);
+    this.drawJiro(this.pointerX, y, stage.radius, stage.index, this.spawnAngle, 0.9);
   }
 
   private drawFruit(body: FruitBody) {
