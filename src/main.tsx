@@ -22,7 +22,7 @@ function App() {
   const bgmStartedRef = useRef(false);
 
   useEffect(() => {
-    const audio = new Audio('/assets/bgm.mp3');
+    const audio = new Audio('assets/bgm.mp3');
     audio.loop = true;
     audio.volume = 0.4;
     bgmRef.current = audio;

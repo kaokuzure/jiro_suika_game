@@ -172,8 +172,8 @@ export class SuikaGame {
   async init() {
     this.images = await Promise.all(STAGES.map((s) => loadImage(s.image)));
     this.imageTrims = this.images.map((img) => (img ? computeTrim(img) : null));
-    this.backgroundImage = await loadImage('/assets/jar-background.png');
-    this.aggressiveBackgroundImage = await loadImage('/assets/jar-background-aggressive.png');
+    this.backgroundImage = await loadImage('assets/jar-background.png');
+    this.aggressiveBackgroundImage = await loadImage('assets/jar-background-aggressive.png');
     await this.loadMergeSound();
     this.windTimer = this.randomWindInterval();
     this.pickNextStage();
@@ -184,7 +184,7 @@ export class SuikaGame {
     try {
       const AudioCtx = window.AudioContext;
       if (!AudioCtx) return;
-      const res = await fetch('/assets/se_zen.aac');
+      const res = await fetch('assets/se_zen.aac');
       const arrayBuffer = await res.arrayBuffer();
       this.audioCtx = new AudioCtx();
       this.mergeBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);

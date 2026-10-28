@@ -56,7 +56,7 @@ export const STAGE_COUNT = 11;
 
 export const STAGES: StageConfig[] = Array.from({ length: STAGE_COUNT }, (_, i) => ({
   index: i,
-  image: `/assets/jiro/jiro_${i + 1}.png`,
+  image: `assets/jiro/jiro_${i + 1}.png`,
   radius: DIAMETERS[i] / 2,
   fallbackColor: FALLBACK_COLORS[i],
   colorA: GRADIENT_COLORS[i][0],
